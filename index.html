@@ -12,6 +12,9 @@
       padding: 0;
     }
     h1 { color: #4B0082; margin-top: 30px;}
+<h2 style="margin-top:48px; color:#4B0082;">House Points Graph</h2>
+<canvas id="houseChart" width="400" height="300"></canvas>
+
     iframe { 
       border: 2px solid #4B0082; 
       border-radius: 12px; 
@@ -26,6 +29,8 @@
       font-size: 0.96em;
     }
   </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 </head>
 <body>
   <h1>IHS House Leaderboard 🏆</h1>
@@ -34,5 +39,64 @@
     Live points update with every approved event! <br>
     Made for IHS students & teachers.
   </div>
+<script>
+async function fetchSheetData() {
+    // Use your Google Sheets JSON-feed link here:
+    const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTn2QoOYjZcd5Xao4p2grPTDIJL82Bk8pZqD4BQtGcHMMRjKS5JdvGvaOlftEAbE9iLhrZbbzY2jHE7/gviz/tq?tqx=out:json";
+    const res = await fetch(url);
+    const text = await res.text();
+    // Google adds some extra stuff; remove it to parse JSON
+    const json = JSON.parse(text.substr(47).slice(0, -2));
+
+    // Extract rows (skip header row)
+    const rows = json.table.rows;
+    // Assuming your columns are: House | Points
+    const houses = [];
+    const points = [];
+    rows.forEach(row => {
+        houses.push(row.c[0].v);    // House name
+        points.push(row.c[1].v);    // Points (number)
+    });
+
+    return {houses, points};
+}
+
+async function drawChart() {
+    const data = await fetchSheetData();
+
+    const ctx = document.getElementById('houseChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: data.houses,
+            datasets: [{
+                label: 'Points',
+                data: data.points,
+                backgroundColor: [
+                    '#018a2e', // Emerald
+                    '#d3131d', // Ruby
+                    '#1e60bf', // Sapphire
+                    '#e7b200'  // Topaz
+                ],
+                borderColor: '#4B0082',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            indexAxis: 'y', // horizontal bar; change to 'x' for vertical
+            scales: {
+                x: { beginAtZero: true },
+                y: { beginAtZero: true }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
+drawChart();
+</script>
+
 </body>
 </html>
