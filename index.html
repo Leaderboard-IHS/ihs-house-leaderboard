@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>IHS House Points Leaderboard</title>
   <style>
     body {
@@ -10,97 +11,142 @@
       text-align: center;
       margin: 0;
       padding: 0;
+      color: #4B0082;
     }
     h1 {
-      color: #4B0082;
       margin-top: 30px;
+      font-size: 2.5rem;
+      font-weight: 700;
+      text-shadow: 1px 2px 5px #b3aafc;
     }
     iframe {
-      border: 2px solid #4B0082; 
+      border: 2px solid #4B0082;
       border-radius: 12px; 
-      margin-top: 20px;
+      margin: 20px auto;
       width: 90vw;
       max-width: 1100px;
       height: 480px;
+      display: block;
     }
-    .footer {
-      color: #555;
-      margin-top: 40px;
-      font-size: 0.96em;
+    h2 {
+      margin-top: 48px;
+      color: #4B0082;
+      font-size: 1.8rem;
+      font-weight: 600;
     }
     #houseChart {
       max-width: 90vw;
       max-height: 400px;
-      margin-top: 48px;
+      margin: 20px auto 60px;
+      display: block;
+      box-shadow: 0 0 15px rgba(75, 0, 130, 0.3);
+      border-radius: 8px;
+      background: white;
+      padding: 16px;
+    }
+    .footer {
+      font-size: 0.9rem;
+      color: #555;
+      margin-bottom: 40px;
     }
   </style>
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
   <h1>IHS House Leaderboard 🏆</h1>
 
-  <iframe src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTn2QoOYjZcd5Xao4p2grPTDIJL82Bk8pZqD4BQtGcHMMRjKS5JdvGvaOlftEAbE9iLhrZbbzY2jHE7/pubhtml?gid=0&single=true"></iframe>
-  
-  <h2 style="color:#4B0082;">House Points Graph</h2>
-  <canvas id="houseChart" width="700" height="400"></canvas>
-  
+  <!-- Embedded Google Sheet House Leaderboard -->
+  <iframe 
+    src="https://docs.google.com/spreadsheets/d/e/2PACX-1vTn2QoOYjZcd5Xao4p2grPTDIJL82Bk8pZqD4BQtGcHMMRjKS5JdvGvaOlftEAbE9iLhrZbbzY2jHE7/pubhtml?gid=0&single=true" 
+    title="IHS House Points Leaderboard">
+  </iframe>
+
+  <h2>House Points Graph</h2>
+
+  <!-- Chart.js Canvas -->
+  <canvas id="houseChart" width="700" height="400" aria-label="Bar chart representing house points" role="img"></canvas>
+
   <div class="footer">
-    Live points update with every approved event! <br>
-    Made for IHS students & teachers.
+    Live points update with every approved event!<br />
+    Made for IHS students &amp; teachers.
   </div>
 
   <script>
-  async function fetchSheetData() {
+    async function fetchSheetData() {
+      // Your Google Sheet JSON data URL (gviz API)
       const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTn2QoOYjZcd5Xao4p2grPTDIJL82Bk8pZqD4BQtGcHMMRjKS5JdvGvaOlftEAbE9iLhrZbbzY2jHE7/gviz/tq?tqx=out:json";
-      const res = await fetch(url);
-      const text = await res.text();
-      const json = JSON.parse(text.substr(47).slice(0, -2));
-      const rows = json.table.rows;
-      const houses = [];
-      const points = [];
-      rows.forEach(row => {
+      try {
+        const res = await fetch(url);
+        const text = await res.text();
+        // Remove the security prefix and suffix to parse valid JSON
+        const json = JSON.parse(text.substr(47).slice(0, -2));
+
+        const rows = json.table.rows;
+        const houses = [];
+        const points = [];
+        rows.forEach(row => {
           houses.push(row.c[0].v);
           points.push(row.c[1].v);
-      });
-      return {houses, points};
-  }
+        });
+        return { houses, points };
 
-  async function drawChart() {
+      } catch (error) {
+        console.error("Error fetching or parsing sheet data:", error);
+        return { houses: [], points: [] };
+      }
+    }
+
+    async function drawChart() {
       const data = await fetchSheetData();
-      const ctx = document.getElementById('houseChart').getContext('2d');
-      new Chart(ctx, {
-          type: 'bar',
-          data: {
-              labels: data.houses,
-              datasets: [{
-                  label: 'Points',
-                  data: data.points,
-                  backgroundColor: [
-                      '#018a2e', // Emerald
-                      '#d3131d', // Ruby
-                      '#1e60bf', // Sapphire
-                      '#e7b200'  // Topaz
-                  ],
-                  borderColor: '#4B0082',
-                  borderWidth: 2
-              }]
-          },
-          options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              indexAxis: 'y', // horizontal bars
-              scales: {
-                  x: { beginAtZero: true },
-                  y: { beginAtZero: true }
-              },
-              plugins: {
-                  legend: { display: false }
-              }
-          }
-      });
-  }
 
-  drawChart();
+      if (data.houses.length === 0) {
+        console.warn("No data found for the chart.");
+        return;
+      }
+
+      const ctx = document.getElementById('houseChart').getContext('2d');
+
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.houses,
+          datasets: [{
+            label: 'Points',
+            data: data.points,
+            backgroundColor: [
+              '#018a2e', // Emerald - green
+              '#d3131d', // Ruby - red
+              '#1e60bf', // Sapphire - blue
+              '#e7b200'  // Topaz - yellow
+            ],
+            borderColor: '#4B0082',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y', // horizontal bars
+          scales: {
+            x: { beginAtZero: true },
+            y: { beginAtZero: true }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              enabled: true,
+              backgroundColor: '#4B0082',
+              titleColor: '#fff',
+              bodyColor: '#fff',
+            }
+          }
+        }
+      });
+    }
+
+    drawChart();
   </script>
 </body>
 </html>
