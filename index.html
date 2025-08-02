@@ -75,32 +75,23 @@
 
   <script>
     async function fetchSheetData() {
-      const url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTn2QoOYjZcd5Xao4p2grPTDIJL82Bk8pZqD4BQtGcHMMRjKS5JdvGvaOlftEAbE9iLhrZbbzY2jHE7/gviz/tq?tqx=out:json";
+      const url = "https://script.google.com/macros/s/AKfycbwKAEbIqL8om7uuwqSknOw2iiGO2yCeQzpa2v2DCQMuKbF9iD30U4NzlX-aOLc_RHM7/exec";
       try {
         const res = await fetch(url);
-        const text = await res.text();
-        // Find where the JSON really starts and ends
-        const jsonStart = text.indexOf('{');
-        const jsonEnd = text.lastIndexOf('}');
-        const jsonString = text.substring(jsonStart, jsonEnd + 1);
+        const json = await res.json();
 
-        const json = JSON.parse(jsonString);
-
-        const rows = json.table.rows;
         const houses = [];
         const points = [];
-        rows.forEach(row => {
-          // Only push if there are two cells in the row (house name and points)
-          if (row.c[0] && row.c[1]) {
-            houses.push(row.c[0].v);
-            points.push(row.c[1].v);
-          }
+
+        // Make sure these keys exactly match your Google Sheet column headers
+        json.forEach(row => {
+          houses.push(row["House"]);
+          points.push(Number(row["Points"])); // Convert to number (optional but recommended)
         });
-        // This line is just for debugging. You can delete or keep it.
-        console.log("Houses:", houses, "Points:", points);
+
         return { houses, points };
       } catch (error) {
-        console.error("Error fetching or parsing sheet data:", error);
+        console.error("Error fetching or parsing Apps Script JSON data:", error);
         return { houses: [], points: [] };
       }
     }
