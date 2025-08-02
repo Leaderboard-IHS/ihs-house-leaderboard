@@ -44,6 +44,31 @@
       background: white;
       padding: 16px;
     }
+    #studentLeaderboard {
+      margin: 0 auto 60px;
+      max-width: 600px;
+      width: 90%;
+      border-collapse: collapse;
+      box-shadow: 0 0 12px rgba(75, 0, 130, 0.2);
+      background: white;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    #studentLeaderboard th, #studentLeaderboard td {
+      border: 1px solid #ccc;
+      padding: 10px 15px;
+      text-align: left;
+      font-size: 1rem;
+      color: #4B0082;
+    }
+    #studentLeaderboard thead {
+      background-color: #b3aafc;
+      color: #fff;
+      font-weight: 600;
+    }
+    #studentLeaderboard tbody tr:nth-child(odd) {
+      background-color: #f0f0ff;
+    }
     .footer {
       font-size: 0.9rem;
       color: #555;
@@ -64,9 +89,23 @@
   </iframe>
 
   <h2>House Points Graph</h2>
-
   <!-- Chart.js Canvas -->
   <canvas id="houseChart" width="700" height="400" aria-label="Bar chart representing house points" role="img"></canvas>
+
+  <h2>Top 5 Students Leaderboard</h2>
+  <table id="studentLeaderboard" aria-label="Top 5 students leaderboard with points and house">
+    <thead>
+      <tr>
+        <th>Rank</th>
+        <th>Student</th>
+        <th>House</th>
+        <th>Points</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dynamically populated -->
+    </tbody>
+  </table>
 
   <div class="footer">
     Live points update with every approved event!<br />
@@ -74,8 +113,11 @@
   </div>
 
   <script>
-    async function fetchSheetData() {
-      const url = "https://script.google.com/macros/s/AKfycbwKAEbIqL8om7uuwqSknOw2iiGO2yCeQzpa2v2DCQMuKbF9iD30U4NzlX-aOLc_RHM7/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwKAEbIqL8om7uuwqSknOw2iiGO2yCeQzpa2v2DCQMuKbF9iD30U4NzlX-aOLc_RHM7/exec";
+
+    // Fetch house leaderboard data for chart
+    async function fetchHouseLeaderboard() {
+      const url = APPS_SCRIPT_URL + "?type=house";
       try {
         const res = await fetch(url);
         const json = await res.json();
@@ -83,24 +125,24 @@
         const houses = [];
         const points = [];
 
-        // Make sure these keys exactly match your Google Sheet column headers
         json.forEach(row => {
           houses.push(row["House"]);
-          points.push(Number(row["Points"])); // Convert to number (optional but recommended)
+          points.push(Number(row["Points"]));
         });
 
         return { houses, points };
       } catch (error) {
-        console.error("Error fetching or parsing Apps Script JSON data:", error);
+        console.error("Error fetching house leaderboard:", error);
         return { houses: [], points: [] };
       }
     }
 
-    async function drawChart() {
-      const data = await fetchSheetData();
+    // Draw the horizontal bar chart for houses
+    async function drawHouseChart() {
+      const data = await fetchHouseLeaderboard();
 
       if (data.houses.length === 0) {
-        console.warn("No data found for the chart.");
+        console.warn("No data found for the house chart.");
         return;
       }
 
@@ -144,7 +186,38 @@
       });
     }
 
-    drawChart();
+    // Fetch top 5 student leaderboard
+    async function fetchStudentLeaderboard() {
+      const url = APPS_SCRIPT_URL + "?type=student";
+      try {
+        const res = await fetch(url);
+        const students = await res.json();
+
+        const tbody = document.querySelector('#studentLeaderboard tbody');
+        tbody.innerHTML = '';
+
+        students.forEach((student, index) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${student["Student Name"]}</td>
+            <td>${student["House"]}</td>
+            <td>${student["Points"]}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (error) {
+        console.error("Error fetching student leaderboard:", error);
+      }
+    }
+
+    // Initialize everything on page load
+    async function init() {
+      await drawHouseChart();
+      await fetchStudentLeaderboard();
+    }
+
+    init();
   </script>
 </body>
 </html>
